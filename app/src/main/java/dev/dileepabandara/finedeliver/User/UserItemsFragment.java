@@ -113,12 +113,12 @@ public class UserItemsFragment extends Fragment {
 
         try {
             //  Get User posted items
-            arrayList.clear();
             String userID = FirebaseAuth.getInstance().getCurrentUser().getUid();
             databaseReference = FirebaseDatabase.getInstance().getReference("Orders").child(userID);
             databaseReference.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    arrayList.clear();
                     if (snapshot.exists()) {
                         for (DataSnapshot snapshot1 : snapshot.getChildren()) {
                             UserPostItemHelperClass p = snapshot1.getValue(UserPostItemHelperClass.class);

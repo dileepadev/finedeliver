@@ -66,8 +66,11 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.OnProgressListener;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.theartofdev.edmodo.cropper.CropImage;
-import com.theartofdev.edmodo.cropper.CropImageView;
+import com.canhub.cropper.CropImageView;
+import com.canhub.cropper.CropImageContract;
+import com.canhub.cropper.CropImageContractOptions;
+import com.canhub.cropper.CropImageOptions;
+import androidx.activity.result.ActivityResultLauncher;
 
 import java.util.Arrays;
 import java.util.Calendar;
@@ -121,6 +124,19 @@ public class UserPostItem extends AppCompatActivity {
     //  Firebase data save variables
     String itemCategory, orderName, itemDescription, itemPackageSize, itemPackageWeight,
             itemDueDatAndTime, itemOriginLocation, itemDestinationLocation, itemImageUri;
+
+    private final ActivityResultLauncher<CropImageContractOptions> cropImage = registerForActivityResult(new CropImageContract(), result -> {
+        if (result.isSuccessful()) {
+            Uri resultUri = result.getUriContent();
+            imgUploadItem.setImageURI(resultUri);
+            croppedImageURI = resultUri;
+            Toast.makeText(this, "Cropped Successfully!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "" + croppedImageURI, Toast.LENGTH_SHORT).show();
+        } else {
+            Exception error = result.getError();
+            Toast.makeText(this, "Failed to Crop" + error, Toast.LENGTH_SHORT).show();
+        }
+    });
 
     //  --------------------------------------- onCreate ---------------------------------------
     @Override
@@ -232,10 +248,12 @@ public class UserPostItem extends AppCompatActivity {
     //  ---------------------------------------------------- Image ----------------------------------------------------
 
     private void cropImageActivity(Uri imageUri) {
-        CropImage.activity(imageUri)
-                .setGuidelines(CropImageView.Guidelines.ON)
-                .setMultiTouchEnabled(true)
-                .start(this);
+        CropImageOptions cropImageOptions = new CropImageOptions();
+        cropImageOptions.guidelines = CropImageView.Guidelines.ON;
+        cropImageOptions.multiTouchEnabled = true;
+
+        CropImageContractOptions cropImageContractOptions = new CropImageContractOptions(imageUri, cropImageOptions);
+        cropImage.launch(cropImageContractOptions);
     }
 
 
@@ -259,22 +277,6 @@ public class UserPostItem extends AppCompatActivity {
                 }
 
 
-        }
-
-
-        //  -------------- Select Image by Camera --------------
-        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            CropImage.ActivityResult result = CropImage.getActivityResult(data);
-
-            if (resultCode == RESULT_OK) {
-                Uri resultUri = result.getUri();
-                imgUploadItem.setImageURI(resultUri);
-                croppedImageURI = resultUri;
-                Toast.makeText(this, "Cropped Successfully!", Toast.LENGTH_SHORT).show();
-                Toast.makeText(this, "" + croppedImageURI, Toast.LENGTH_SHORT).show();
-            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
-                Toast.makeText(this, "Failed to Crop" + result.getError(), Toast.LENGTH_SHORT).show();
-            }
         }
     }
 
@@ -411,7 +413,7 @@ public class UserPostItem extends AppCompatActivity {
                                 throw task.getException();
                             }
 
-                            downloadImageURL = filepath.getDownloadUrl().toString();
+                            // downloadImageURL = filepath.getDownloadUrl().toString();
 
                             return filepath.getDownloadUrl();
                         }
@@ -420,6 +422,7 @@ public class UserPostItem extends AppCompatActivity {
                         public void onComplete(@NonNull Task<Uri> task) {
 
                             if (task.isSuccessful()) {
+                                downloadImageURL = task.getResult().toString();
 
                                 UserPostItemHelperClass userPostItemHelperClass = new UserPostItemHelperClass(
                                         itemCategory, orderName, itemDescription, itemPackageSize,

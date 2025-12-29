@@ -168,20 +168,39 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         Toast.makeText(this, "Map is ready", Toast.LENGTH_SHORT).show();
         Log.d(TAG, "onMapReady: Map is ready");
         mMap = googleMap;
+        updateLocationUI();
 
-        if (IS_LOCATION_PERMISSION_GRANTED) {
-            getDeviceCurrentLocation();
-
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                return;
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                Object tag = marker.getTag();
+                if (tag instanceof String[]) {
+                    String[] locationData = (String[]) tag;
+                    showSelectionDialog(locationData);
+                }
             }
-            mMap.setMyLocationEnabled(true);
-            mMap.getUiSettings().setMyLocationButtonEnabled(false);
-            searchForLocation();
-            longTapForSelectLocation();
-        }
+        });
+    }
 
+    private void updateLocationUI() {
+        if (mMap == null) {
+            return;
+        }
+        try {
+            if (IS_LOCATION_PERMISSION_GRANTED) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                        && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
+                mMap.setMyLocationEnabled(true);
+                mMap.getUiSettings().setMyLocationButtonEnabled(false);
+                searchForLocation();
+                longTapForSelectLocation();
+                getDeviceCurrentLocation();
+            }
+        } catch (SecurityException e) {
+            Log.e("Exception: %s", e.getMessage());
+        }
     }
 
 
@@ -193,7 +212,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         if (ContextCompat.checkSelfPermission(this.getApplicationContext(), FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             if (ContextCompat.checkSelfPermission(this.getApplicationContext(), COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 IS_LOCATION_PERMISSION_GRANTED = true;
-                getDeviceCurrentLocation();
+                // getDeviceCurrentLocation(); // Handled by onMapReady -> updateLocationUI
             } else {
                 ActivityCompat.requestPermissions(this, permissions, LOCATION_PERMISSION_REQUEST_CODE);
             }
@@ -222,7 +241,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     }
                     Log.d(TAG, "onRequestPermissionsResult: permission granted");
                     IS_LOCATION_PERMISSION_GRANTED = true;
-                    getDeviceCurrentLocation();
+                    updateLocationUI();
                 }
             }
         }
@@ -259,7 +278,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     //  --------------------------------------- Autocomplete Place API ---------------------------------------
     private void autocompletePLace() {
         // Initialize places
-        Places.initialize(getApplicationContext(), "");
+        Places.initialize(getApplicationContext(), dev.dileepabandara.finedeliver.BuildConfig.MAPS_API_KEY);
 
         //Set onClickListener
         txtSearchMapLocation.setOnClickListener(new View.OnClickListener() {
@@ -347,9 +366,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                                 .position(latLng)
                                 .title(sAddress)
                                 .icon(BitmapDescriptorFactory.fromBitmap(customMapMarkerSelected()));
-                        mMap.addMarker(options);
-
-                        showOptionForLocation(sAddress, sCity, sProvince, sLatitude, sLongitude);
+                        Marker marker = mMap.addMarker(options);
+                        marker.setTag(new String[]{sAddress, sCity, sProvince, sLatitude, sLongitude});
                     }
 
                 } catch (Exception e) {
@@ -360,36 +378,29 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     }
 
     //  --------------------------------------- Show options on touch map marker ---------------------------------------
-    private void showOptionForLocation(String address, String city, String province, String latitude, String longitude) {
+    private void showSelectionDialog(final String[] locationData) {
 
-        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
-            @Override
-            public void onInfoWindowClick(Marker marker) {
-
-                // AlertDialog for select location
-                AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
-                builder.setTitle("Select location");
-                builder.setMessage("What would be this location?");
-                builder.setPositiveButton("Origin", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(MapActivity.this, "Origin location selected", Toast.LENGTH_SHORT).show();
-                        origin = new String[]{address, city, province, latitude, longitude};
-                        dialog.dismiss();
-                    }
-                });
-                builder.setNegativeButton("Destination", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(MapActivity.this, "Destination location selected", Toast.LENGTH_SHORT).show();
-                        destination = new String[]{address, city, province, latitude, longitude};
-                        dialog.dismiss();
-                    }
-                });
-                AlertDialog alert = builder.create();
-                alert.show();
-
+        // AlertDialog for select location
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapActivity.this);
+        builder.setTitle("Select location");
+        builder.setMessage("What would be this location?");
+        builder.setPositiveButton("Origin", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                Toast.makeText(MapActivity.this, "Origin location selected", Toast.LENGTH_SHORT).show();
+                origin = locationData;
+                dialog.dismiss();
             }
         });
+        builder.setNegativeButton("Destination", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Toast.makeText(MapActivity.this, "Destination location selected", Toast.LENGTH_SHORT).show();
+                destination = locationData;
+                dialog.dismiss();
+            }
+        });
+        AlertDialog alert = builder.create();
+        alert.show();
 
     }
 
@@ -407,26 +418,26 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         if (location != null) {
                             Log.d(TAG, "onSuccess: Location Found");
 
-                            //Sync Map
-                            mapFragment.getMapAsync(new OnMapReadyCallback() {
-                                @Override
-                                public void onMapReady(GoogleMap googleMap) {
-                                    //Initialize lat lng
-                                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                                    moveCamera(latLng, DEFAULT_ZOOM, "My Location");
-                                    Toast.makeText(MapActivity.this, "Found you", Toast.LENGTH_SHORT).show();
+                            //Initialize lat lng
+                            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                            Marker marker = moveCamera(latLng, DEFAULT_ZOOM, "My Location");
+                            Toast.makeText(MapActivity.this, "Found you", Toast.LENGTH_SHORT).show();
 
-                                    try {
-                                        List<Address> list = new Geocoder(MapActivity.this).getFromLocation(latLng.latitude, latLng.longitude, 1);
-                                        showOptionForLocation(list.get(0).getAddressLine(0),
-                                                list.get(0).getLocality(), list.get(0).getAdminArea(),
-                                                String.valueOf(location.getLatitude()),
-                                                String.valueOf(location.getLongitude()));
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
+                            try {
+                                List<Address> list = new Geocoder(MapActivity.this).getFromLocation(latLng.latitude, latLng.longitude, 1);
+                                if (list != null && !list.isEmpty() && marker != null) {
+                                    Address address = list.get(0);
+                                    marker.setTag(new String[]{
+                                            address.getAddressLine(0),
+                                            address.getLocality(),
+                                            address.getAdminArea(),
+                                            String.valueOf(location.getLatitude()),
+                                            String.valueOf(location.getLongitude())
+                                    });
                                 }
-                            });
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
 
                         } else {
                             Log.d(TAG, "onComplete: Location Null");
@@ -444,10 +455,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
 
     //  --------------------------------------- Move camera ---------------------------------------
-    private void moveCamera(LatLng latLng, float zoom, String title) {
+    private Marker moveCamera(LatLng latLng, float zoom, String title) {
         Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lon: " + latLng.latitude);
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom));
 
+        Marker marker = null;
         //  CreateMarker Option
 
         if (title.equals("My Location")) {
@@ -457,12 +469,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     .position(latLng)
                     .title(title)
                     .icon(BitmapDescriptorFactory.fromBitmap(customMapMarkerDevice()));
-            mMap.addMarker(options);
+            marker = mMap.addMarker(options);
         }
 
 
         hiddenSoftKeyboard();
-
+        return marker;
 
     }
 

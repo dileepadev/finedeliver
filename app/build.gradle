@@ -2,17 +2,26 @@ plugins {
     id 'com.android.application'
 }
 
+Properties properties = new Properties()
+if (project.rootProject.file('local.properties').exists()) {
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+}
+def mapsApiKey = properties.getProperty('MAPS_API_KEY', "")
+
 android {
-    compileSdkVersion 29
+    namespace "dev.dileepabandara.finedeliver"
+    compileSdkVersion 34
 
     defaultConfig {
         applicationId "dev.dileepabandara.finedeliver"
         minSdkVersion 23
-        targetSdkVersion 29
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "String", "MAPS_API_KEY", "\"${mapsApiKey}\""
+        manifestPlaceholders = [MAPS_API_KEY: mapsApiKey]
     }
 
     buildTypes {
@@ -25,6 +34,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    buildFeatures {
+        buildConfig true
+    }
 }
 
 apply plugin: 'com.android.application'
@@ -32,7 +45,7 @@ apply plugin: 'com.google.gms.google-services'
 
 dependencies {
 
-    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'com.google.android.material:material:1.3.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
@@ -52,12 +65,13 @@ dependencies {
 
     //  Custom Dependencies
     implementation 'com.google.android.material:material:1.3.0'
-    implementation 'com.ismaeldivita.chipnavigation:chip-navigation-bar:1.3.4'
+    implementation 'com.github.ismaeldivita:chip-navigation-bar:1.3.4'
     implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.4.31'
-    implementation 'com.theartofdev.edmodo:android-image-cropper:2.8.+'
+    implementation 'com.github.CanHub:Android-Image-Cropper:4.4.0'
     implementation 'com.github.bumptech.glide:glide:4.12.0'
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+    implementation 'com.android.volley:volley:1.2.1'
 
 
     //  Google Play services
