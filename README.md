@@ -1,4 +1,4 @@
-# Fine Deliver
+# FineDeliver
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/dileepadev/fine-deliver?color=red&label=repository%20size)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/dileepadev/fine-deliver?color=red)
@@ -9,17 +9,17 @@
 
 ## ✨ About
 
-The **Fine Deliver** mobile app is built for users who can register in the app and find delivery details. Users can register and post a delivery, and find out what deliveries are available for distribution. This alpha release does not include the complete requirements and interface. **This project has been developed as an open source for educational purposes.**
+The **FineDeliver** mobile app is built for users who can register in the app and find delivery details. Users can register and post a delivery, and find out what deliveries are available for distribution. This alpha release does not include the complete requirements and interface. **This project has been developed as an open source for educational purposes.**
 
-![Preview Image](https://dileepadev.github.io/images/fine-deliver/preview.png)
+![Preview Image](https://dileepadev.github.io/images/finedeliver/preview.png)
 
 ## 🎞️ Demo Video
 
 Click the link or image below to view the demo video on YouTube.
 
-🔗 <https://youtu.be/M0syZuBxhbY>
+🔗 <https://youtu.be/7RVSHpwieSQ>
 
-[![Watch the demo video](https://img.youtube.com/vi//0.jpg)](https://youtu.be/M0syZuBxhbY)
+[![Watch the demo video](https://img.youtube.com/vi/7RVSHpwieSQ/0.jpg)](https://youtu.be/7RVSHpwieSQ)
 
 ## 📦 Release Details
 
